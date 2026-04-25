@@ -41,6 +41,12 @@ jobs:
             DEVELOPMENT_TEAM="" \
             clean build
 
+      - name: Check app icon output
+        run: |
+          echo "Checking generated app icons..."
+          find build/Build/Products/Release-iphoneos/EmbyWikiWebView.app -maxdepth 1 -iname "AppIcon*" -print || true
+          /usr/libexec/PlistBuddy -c "Print :CFBundleIcons" build/Build/Products/Release-iphoneos/EmbyWikiWebView.app/Info.plist || true
+
       - name: Pack unsigned IPA
         run: |
           rm -rf Payload EmbyWikiWebView-unsigned.ipa
@@ -55,5 +61,6 @@ jobs:
           name: EmbyWikiWebView-unsigned-ipa
           path: EmbyWikiWebView-unsigned.ipa
           if-no-files-found: error
+          retention-days: 7iles-found: error
           retention-days: 7
 
