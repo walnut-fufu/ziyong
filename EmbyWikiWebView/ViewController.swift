@@ -17,7 +17,8 @@ final class ViewController: UIViewController, WKNavigationDelegate, WKUIDelegate
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        view.backgroundColor = .systemBackground
+        view.backgroundColor = UIColor(red: 0.965, green: 0.979, blue: 1.0, alpha: 1.0)
+        view.clipsToBounds = true
 
         configureWebView()
         configureProgressView()
@@ -41,8 +42,13 @@ final class ViewController: UIViewController, WKNavigationDelegate, WKUIDelegate
         let userContentController = WKUserContentController()
         userContentController.addUserScript(WKUserScript(
             source: viewportFitScript,
-            injectionTime: .atDocumentEnd,
+            injectionTime: .atDocumentStart,
             forMainFrameOnly: true
+        ))
+        userContentController.addUserScript(WKUserScript(
+            source: immersiveShellStyleScript,
+            injectionTime: .atDocumentStart,
+            forMainFrameOnly: false
         ))
 
         if AppConfig.hideCommonFloatingAdSelectors {
@@ -63,11 +69,15 @@ final class ViewController: UIViewController, WKNavigationDelegate, WKUIDelegate
         webView.navigationDelegate = self
         webView.uiDelegate = self
         webView.allowsBackForwardNavigationGestures = true
-        webView.backgroundColor = .systemBackground
+        webView.backgroundColor = UIColor(red: 0.965, green: 0.979, blue: 1.0, alpha: 1.0)
         webView.isOpaque = false
         webView.scrollView.bounces = true
         webView.scrollView.keyboardDismissMode = .interactive
-        webView.scrollView.contentInsetAdjustmentBehavior = .automatic
+        webView.scrollView.contentInsetAdjustmentBehavior = .never
+        webView.scrollView.contentInset = .zero
+        webView.scrollView.scrollIndicatorInsets = .zero
+        webView.scrollView.verticalScrollIndicatorInsets = .zero
+        webView.scrollView.horizontalScrollIndicatorInsets = .zero
 
         refreshControl.addTarget(self, action: #selector(reloadPage), for: .valueChanged)
         refreshControl.tintColor = .systemBlue
@@ -77,10 +87,10 @@ final class ViewController: UIViewController, WKNavigationDelegate, WKUIDelegate
 
         view.addSubview(webView)
         NSLayoutConstraint.activate([
-            webView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
-            webView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
-            webView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
-            webView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
+            webView.topAnchor.constraint(equalTo: view.topAnchor),
+            webView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            webView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            webView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
     }
 
@@ -92,8 +102,8 @@ final class ViewController: UIViewController, WKNavigationDelegate, WKUIDelegate
 
         NSLayoutConstraint.activate([
             progressView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
-            progressView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
-            progressView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
+            progressView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            progressView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             progressView.heightAnchor.constraint(equalToConstant: 2)
         ])
 
@@ -112,7 +122,7 @@ final class ViewController: UIViewController, WKNavigationDelegate, WKUIDelegate
 
     private func configureErrorView() {
         errorView.translatesAutoresizingMaskIntoConstraints = false
-        errorView.backgroundColor = .systemBackground
+        errorView.backgroundColor = UIColor(red: 0.965, green: 0.979, blue: 1.0, alpha: 1.0)
         errorView.isHidden = true
         view.addSubview(errorView)
 
@@ -139,10 +149,10 @@ final class ViewController: UIViewController, WKNavigationDelegate, WKUIDelegate
         errorView.addSubview(retryButton)
 
         NSLayoutConstraint.activate([
-            errorView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
-            errorView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
-            errorView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
-            errorView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
+            errorView.topAnchor.constraint(equalTo: view.topAnchor),
+            errorView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            errorView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            errorView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
 
             errorTitleLabel.centerYAnchor.constraint(equalTo: errorView.centerYAnchor, constant: -36),
             errorTitleLabel.leadingAnchor.constraint(equalTo: errorView.leadingAnchor, constant: 24),
@@ -159,7 +169,6 @@ final class ViewController: UIViewController, WKNavigationDelegate, WKUIDelegate
     }
 
     private func defaultUserAgentWithSuffix() -> String? {
-        // 这里不强行伪装 Safari，只追加一个后缀，避免破坏网页兼容性。
         nil
     }
 
@@ -249,7 +258,6 @@ final class ViewController: UIViewController, WKNavigationDelegate, WKUIDelegate
         for navigationAction: WKNavigationAction,
         windowFeatures: WKWindowFeatures
     ) -> WKWebView? {
-        // 处理 target="_blank" / window.open：全部在当前 WebView 内打开。
         if navigationAction.targetFrame == nil {
             webView.load(navigationAction.request)
         }
@@ -272,6 +280,48 @@ final class ViewController: UIViewController, WKNavigationDelegate, WKUIDelegate
             if (content.indexOf('viewport-fit=cover') === -1) {
               meta.setAttribute('content', content ? content + ', viewport-fit=cover' : 'width=device-width, initial-scale=1.0, viewport-fit=cover');
             }
+          }
+        })();
+        """
+    }
+
+    private var immersiveShellStyleScript: String {
+        """
+        (function() {
+          var css = `
+            html {
+              background: #f6f9ff !important;
+            }
+            html, body {
+              width: 100% !important;
+              min-height: 100% !important;
+              margin: 0 !important;
+              background: #f6f9ff !important;
+              overscroll-behavior-y: auto;
+            }
+            body.emby-ios-shell-safe-area {
+              box-sizing: border-box;
+              padding-top: max(env(safe-area-inset-top), 0px);
+              padding-bottom: max(env(safe-area-inset-bottom), 0px);
+              padding-left: max(env(safe-area-inset-left), 0px);
+              padding-right: max(env(safe-area-inset-right), 0px);
+            }
+          `;
+          var style = document.createElement('style');
+          style.setAttribute('data-emby-ios-shell-style', 'true');
+          style.textContent = css;
+          document.documentElement.appendChild(style);
+
+          function applySafeArea() {
+            if (document.body && !document.body.classList.contains('emby-ios-shell-safe-area')) {
+              document.body.classList.add('emby-ios-shell-safe-area');
+            }
+          }
+
+          if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', applySafeArea, { once: true });
+          } else {
+            applySafeArea();
           }
         })();
         """
