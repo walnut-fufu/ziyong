@@ -286,3 +286,16 @@ brew install xcodegen
 ├── project.yml
 └── README.md
 ```
+
+
+## 图标配置说明
+
+本版本已经在 `project.yml` 中显式配置：
+
+```yaml
+ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+```
+
+并且已内置 `EmbyWikiWebView/Assets.xcassets/AppIcon.appiconset`，GitHub Actions 构建时会把图标编译进 `.app`。
+
+如果安装后还是显示旧图标，通常是 iOS 或自签工具缓存导致。处理方法：删除旧 App → 重新签名安装；必要时重启设备，或临时换一个 Bundle ID 再安装。
