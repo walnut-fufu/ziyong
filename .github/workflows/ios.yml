@@ -24,7 +24,8 @@ jobs:
           brew install xcodegen
 
       - name: Generate Xcode project
-        run: xcodegen generate
+        run: |
+          xcodegen generate
 
       - name: Build unsigned app
         run: |
@@ -40,17 +41,70 @@ jobs:
             DEVELOPMENT_TEAM="" \
             clean build
 
-      - name: Check app icon output
+      - name: Force bundle app icons
         run: |
-          echo "Checking generated app icons..."
-          find build/Build/Products/Release-iphoneos/EmbyWikiWebView.app -maxdepth 2 -print | grep -i appicon || true
-          /usr/libexec/PlistBuddy -c "Print :CFBundleIcons" build/Build/Products/Release-iphoneos/EmbyWikiWebView.app/Info.plist || true
+          set -e
+          APP="build/Build/Products/Release-iphoneos/EmbyWikiWebView.app"
+          ICONSRC="EmbyWikiWebView/Assets.xcassets/AppIcon.appiconset"
+
+          echo "Copying icon files into app bundle..."
+          cp "$ICONSRC/appicon-40.png"  "$APP/AppIcon20x20@2x.png"
+          cp "$ICONSRC/appicon-60.png"  "$APP/AppIcon20x20@3x.png"
+          cp "$ICONSRC/appicon-58.png"  "$APP/AppIcon29x29@2x.png"
+          cp "$ICONSRC/appicon-87.png"  "$APP/AppIcon29x29@3x.png"
+          cp "$ICONSRC/appicon-80.png"  "$APP/AppIcon40x40@2x.png"
+          cp "$ICONSRC/appicon-120.png" "$APP/AppIcon40x40@3x.png"
+          cp "$ICONSRC/appicon-120.png" "$APP/AppIcon60x60@2x.png"
+          cp "$ICONSRC/appicon-180.png" "$APP/AppIcon60x60@3x.png"
+
+          cp "$ICONSRC/appicon-20.png"  "$APP/AppIcon20x20~ipad.png"
+          cp "$ICONSRC/appicon-40.png"  "$APP/AppIcon20x20@2x~ipad.png"
+          cp "$ICONSRC/appicon-29.png"  "$APP/AppIcon29x29~ipad.png"
+          cp "$ICONSRC/appicon-58.png"  "$APP/AppIcon29x29@2x~ipad.png"
+          cp "$ICONSRC/appicon-40.png"  "$APP/AppIcon40x40~ipad.png"
+          cp "$ICONSRC/appicon-80.png"  "$APP/AppIcon40x40@2x~ipad.png"
+          cp "$ICONSRC/appicon-76.png"  "$APP/AppIcon76x76~ipad.png"
+          cp "$ICONSRC/appicon-152.png" "$APP/AppIcon76x76@2x~ipad.png"
+          cp "$ICONSRC/appicon-167.png" "$APP/AppIcon83.5x83.5@2x~ipad.png"
+
+          PLIST="$APP/Info.plist"
+          /usr/libexec/PlistBuddy -c "Delete :CFBundleIcons" "$PLIST" 2>/dev/null || true
+          /usr/libexec/PlistBuddy -c "Delete :CFBundleIcons~ipad" "$PLIST" 2>/dev/null || true
+          /usr/libexec/PlistBuddy -c "Add :CFBundleIcons dict" "$PLIST"
+          /usr/libexec/PlistBuddy -c "Add :CFBundleIcons:CFBundlePrimaryIcon dict" "$PLIST"
+          /usr/libexec/PlistBuddy -c "Add :CFBundleIcons:CFBundlePrimaryIcon:CFBundleIconFiles array" "$PLIST"
+          /usr/libexec/PlistBuddy -c "Add :CFBundleIcons:CFBundlePrimaryIcon:CFBundleIconFiles:0 string AppIcon20x20" "$PLIST"
+          /usr/libexec/PlistBuddy -c "Add :CFBundleIcons:CFBundlePrimaryIcon:CFBundleIconFiles:1 string AppIcon29x29" "$PLIST"
+          /usr/libexec/PlistBuddy -c "Add :CFBundleIcons:CFBundlePrimaryIcon:CFBundleIconFiles:2 string AppIcon40x40" "$PLIST"
+          /usr/libexec/PlistBuddy -c "Add :CFBundleIcons:CFBundlePrimaryIcon:CFBundleIconFiles:3 string AppIcon60x60" "$PLIST"
+          /usr/libexec/PlistBuddy -c "Add :CFBundleIcons:CFBundlePrimaryIcon:UIPrerenderedIcon bool true" "$PLIST"
+          /usr/libexec/PlistBuddy -c "Add :CFBundleIcons:CFBundlePrimaryIcon:CFBundleIconName string AppIcon" "$PLIST"
+
+          /usr/libexec/PlistBuddy -c "Add :CFBundleIcons~ipad dict" "$PLIST"
+          /usr/libexec/PlistBuddy -c "Add :CFBundleIcons~ipad:CFBundlePrimaryIcon dict" "$PLIST"
+          /usr/libexec/PlistBuddy -c "Add :CFBundleIcons~ipad:CFBundlePrimaryIcon:CFBundleIconFiles array" "$PLIST"
+          /usr/libexec/PlistBuddy -c "Add :CFBundleIcons~ipad:CFBundlePrimaryIcon:CFBundleIconFiles:0 string AppIcon20x20" "$PLIST"
+          /usr/libexec/PlistBuddy -c "Add :CFBundleIcons~ipad:CFBundlePrimaryIcon:CFBundleIconFiles:1 string AppIcon29x29" "$PLIST"
+          /usr/libexec/PlistBuddy -c "Add :CFBundleIcons~ipad:CFBundlePrimaryIcon:CFBundleIconFiles:2 string AppIcon40x40" "$PLIST"
+          /usr/libexec/PlistBuddy -c "Add :CFBundleIcons~ipad:CFBundlePrimaryIcon:CFBundleIconFiles:3 string AppIcon76x76" "$PLIST"
+          /usr/libexec/PlistBuddy -c "Add :CFBundleIcons~ipad:CFBundlePrimaryIcon:CFBundleIconFiles:4 string AppIcon83.5x83.5" "$PLIST"
+          /usr/libexec/PlistBuddy -c "Add :CFBundleIcons~ipad:CFBundlePrimaryIcon:UIPrerenderedIcon bool true" "$PLIST"
+          /usr/libexec/PlistBuddy -c "Add :CFBundleIcons~ipad:CFBundlePrimaryIcon:CFBundleIconName string AppIcon" "$PLIST"
+
+          echo "Icon files in app bundle:"
+          find "$APP" -maxdepth 1 -iname 'AppIcon*.png' -print | sort
+          echo "Bundle icon plist:"
+          /usr/libexec/PlistBuddy -c "Print :CFBundleIcons" "$PLIST"
+          /usr/libexec/PlistBuddy -c "Print :CFBundleIcons~ipad" "$PLIST"
 
       - name: Pack unsigned IPA
         run: |
+          set -e
           rm -rf Payload EmbyWikiWebView-unsigned.ipa
           mkdir -p Payload
           cp -R build/Build/Products/Release-iphoneos/EmbyWikiWebView.app Payload/EmbyWikiWebView.app
+          echo "Final IPA contents icon check before zip:"
+          find Payload/EmbyWikiWebView.app -maxdepth 1 -iname 'AppIcon*.png' -print | sort
           zip -qry EmbyWikiWebView-unsigned.ipa Payload
           ls -lh EmbyWikiWebView-unsigned.ipa
 
