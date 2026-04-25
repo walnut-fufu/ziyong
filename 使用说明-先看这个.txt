@@ -1,27 +1,21 @@
-最短使用步骤：
+Emby影视库 iOS IPA 云打包工程 v4 图标强制打包版
 
-1. 解压这个工程包
-2. 新建一个 GitHub 公开仓库
-3. 把本工程全部文件上传到仓库根目录
-4. 打开仓库的 Actions
-5. 选择 Build unsigned iOS IPA
-6. 点 Run workflow
-7. 等待打包完成
-8. 在 Artifacts 下载 EmbyWikiWebView-unsigned-ipa
-9. 解压后得到 EmbyWikiWebView-unsigned.ipa
-10. 用你的自签工具签名安装
+这版专门修复：IPA 生成后没有应用图标的问题。
 
-默认配置：
-App 名称：Emby影视库
-网页地址：https://wiki.emby10086.xyz
-Bundle ID：com.walnut.emby10086wiki
-支持设备：iPhone + iPad
-支持方向：竖屏 + 横屏
-最低系统：iOS 13+
+正确用法：
+1. 建议先把 GitHub 仓库里的旧文件清空，避免旧 workflow 继续运行。
+2. 上传本压缩包解压后的全部文件到仓库根目录。
+3. 仓库里只保留这个 workflow：.github/workflows/ios.yml
+4. 打开 Actions -> Build unsigned iOS IPA -> Run workflow。
+5. 完成后在 Artifacts 下载 EmbyWikiWebView-unsigned-ipa。
+6. 解压后得到 EmbyWikiWebView-unsigned.ipa。
+7. 用你的自签工具签名安装。
+
+如果安装后仍然不显示图标：
+1. 先删除手机上的旧 App。
+2. 重新签名安装新版 IPA。
+3. 如果仍旧显示默认图标，重启手机。
+4. 在 GitHub Actions 日志中打开 Force bundle app icons 这一步，确认是否列出了 AppIcon60x60@2x.png、AppIcon60x60@3x.png 等文件。
 
 注意：
-这个 IPA 是未签名 IPA，不能直接安装。必须用你的 p12 / 描述文件自签后再安装。
-
-
-【图标不刷新处理】
-如果你已经装过旧版，iOS 可能缓存旧图标。请先删除旧 App，再重新签名安装新版 IPA；必要时重启手机或把 Bundle ID 改成新值后再装。
+如果你直接覆盖上传，但仓库里还有 ios1.yml、build-ios-unsigned-ipa.yml 等旧工作流，GitHub 可能还会运行旧的。建议只保留 ios.yml。
