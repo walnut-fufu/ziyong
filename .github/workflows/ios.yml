@@ -21,7 +21,6 @@ jobs:
 
       - name: Install XcodeGen
         run: |
-          brew update
           brew install xcodegen
 
       - name: Generate Xcode project
@@ -44,7 +43,7 @@ jobs:
       - name: Check app icon output
         run: |
           echo "Checking generated app icons..."
-          find build/Build/Products/Release-iphoneos/EmbyWikiWebView.app -maxdepth 1 -iname "AppIcon*" -print || true
+          find build/Build/Products/Release-iphoneos/EmbyWikiWebView.app -maxdepth 2 -print | grep -i appicon || true
           /usr/libexec/PlistBuddy -c "Print :CFBundleIcons" build/Build/Products/Release-iphoneos/EmbyWikiWebView.app/Info.plist || true
 
       - name: Pack unsigned IPA
@@ -52,7 +51,7 @@ jobs:
           rm -rf Payload EmbyWikiWebView-unsigned.ipa
           mkdir -p Payload
           cp -R build/Build/Products/Release-iphoneos/EmbyWikiWebView.app Payload/EmbyWikiWebView.app
-          /usr/bin/zip -qry EmbyWikiWebView-unsigned.ipa Payload
+          zip -qry EmbyWikiWebView-unsigned.ipa Payload
           ls -lh EmbyWikiWebView-unsigned.ipa
 
       - name: Upload IPA artifact
@@ -61,6 +60,5 @@ jobs:
           name: EmbyWikiWebView-unsigned-ipa
           path: EmbyWikiWebView-unsigned.ipa
           if-no-files-found: error
-          retention-days: 7iles-found: error
           retention-days: 7
 
